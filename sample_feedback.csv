@@ -1,0 +1,31 @@
+feedback_id,date,feedback_text,customer_type,source,product_area
+F001,2026-09-01,The dashboard won't load and I can't access any of my data.,Enterprise,Support,Dashboard
+F002,2026-09-02,It would be really useful if we could export reports directly to Excel.,Mid-Market,Survey,Reports
+F003,2026-09-03,I can't figure out where to add a new team member. The settings are confusing.,SMB,Support,User Management
+F004,2026-09-04,The new dashboard is much easier to use. I really like the updated layout.,Enterprise,Survey,Dashboard
+F005,2026-09-05,Our CRM connection keeps disconnecting and we have to reconnect it manually,Enterprise,Customer Success,Integrations
+F006,2026-09-06,Every report export ends with an error today. We cannot send the weekly performance pack to our clients.,Mid-Market,Support,Reports
+F007,2026-09-07,Could you let us schedule reports to arrive by email every Monday morning?,SMB,Sales,Reports
+F008,2026-09-08,The billing page shows our old address even after I save the new one. I can still download invoices but have to request corrections.,Mid-Market,Support,Billing
+F009,2026-09-09,The onboarding checklist helped our team finish setup without needing a training call.,SMB,Survey,Onboarding
+F010,2026-09-10,The dashboard numbers look different this week. I'm not sure whether something changed or we are looking at them differently.,Enterprise,Customer Success,Dashboard
+F011,2026-09-11,New users get an expired invitation message immediately after we invite them. Our new analysts cannot sign in to start work.,Enterprise,Support,User Management
+F012,2026-09-12,We need a read-only role for external reviewers so they can check reports without changing anything.,Mid-Market,Sales,User Management
+F013,2026-09-13,Finding an invoice takes too many clicks. A link from the account menu would save a little time.,SMB,Survey,Billing
+F014,2026-09-14,The new sync history makes it easy to see which records were imported. It saved us a lot of troubleshooting this month.,Mid-Market,Customer Success,Integrations
+F015,2026-09-15,Setup took longer than we expected. We got there eventually but I'm not sure we did everything the right way.,SMB,Customer Success,Onboarding
+F016,2026-09-16,The platform signs everyone out as soon as they open a project. Our operations team has been unable to process today's work.,Enterprise,Support,General Platform
+F017,2026-09-17,It would be helpful to pin our most-used projects to the top of the home page.,SMB,Survey,General Platform
+F018,2026-09-18,The date filter resets whenever I return from a report. I can reselect it but doing that all afternoon gets frustrating.,Mid-Market,Support,Dashboard
+F019,2026-09-19,Being able to duplicate a report has cut our monthly preparation time in half.,Enterprise,Survey,Reports
+F020,2026-09-20,The permissions feel a bit too open for our team. We may just need someone to walk us through the options.,Mid-Market,Sales,User Management
+F021,2026-09-21,Our payment went through but the account still says overdue and blocks access to every project. We cannot complete our client deliveries.,SMB,Support,Billing
+F022,2026-09-22,Could the onboarding guide include a sample project that we can explore before importing our own data?,Mid-Market,Sales,Onboarding
+F023,2026-09-23,The integration field names are hard to match to our internal labels. We worked it out but a preview of sample values would help.,Enterprise,Customer Success,Integrations
+F024,2026-09-24,Search is noticeably faster now. I can find old projects during calls without keeping people waiting.,SMB,Survey,General Platform
+F025,2026-09-25,The new report layout is interesting. Our team is still deciding whether it fits the way we share updates.,Enterprise,Survey,Reports
+F026,2026-09-26,The initial data import stays at 99 percent and never finishes. We cannot start using the workspace until our records are available.,Mid-Market,Support,Onboarding
+F027,2026-09-27,Please add an option to send billing receipts to a second email address so our bookkeeper receives a copy.,SMB,Sales,Billing
+F028,2026-09-28,Removing access for departing team members is much clearer now. The confirmation screen helps us check that we selected the right person.,Enterprise,Customer Success,User Management
+F029,2026-09-29,The connection seems quiet lately. There may simply be fewer updates coming through but I expected to see more activity.,Mid-Market,Customer Success,Integrations
+F030,2026-09-30,Could we choose a different accent colour for dashboard charts? The current palette works but matching our presentation theme would be nice.,SMB,Survey,Dashboard
