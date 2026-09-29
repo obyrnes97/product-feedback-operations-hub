@@ -1,4 +1,3 @@
-import json
 import os
 from pathlib import Path
 
@@ -6,6 +5,8 @@ import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI, OpenAIError
+
+from evaluation.harness import field_accuracy, run_evaluation
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
@@ -18,64 +19,66 @@ if os.getenv("OPENAI_API_KEY", "").strip():
 else:
     st.warning("OpenAI API key is not set. Add it to your local .env file.")
 
-st.subheader("LLM classification test")
-test_feedback = "The reporting dashboard takes forever to load."
-st.write(test_feedback)
+st.subheader("Day 7 prompt evaluation")
+st.caption("Run the fixed 10 test comments. One API call per case; expected answers stay local.")
+project_dir = Path(__file__).resolve().parent
+prompt_files = sorted((project_dir / "prompts").glob("feedback_classification_v*.md"))
+selected_prompt = st.selectbox(
+    "Prompt version", prompt_files, format_func=lambda path: path.name,
+    disabled=not prompt_files,
+)
+if not prompt_files:
+    st.warning("No classification prompt files were found in prompts/.")
 
-if st.button("Test LLM classification"):
+if st.button("Run evaluation", disabled=not prompt_files):
     if not os.getenv("OPENAI_API_KEY", "").strip():
         st.warning("Add OPENAI_API_KEY to your local .env file before testing.")
     else:
+        progress = st.progress(0, text="Starting evaluation...")
+
+        def show_progress(completed, total):
+            progress.progress(completed / total, text=f"Completed {completed}/{total} cases")
+
         try:
-            readme = Path(__file__).with_name("README.md").read_text(encoding="utf-8")
-            taxonomy = readme.split("## Feedback Taxonomy\n", 1)[1].split("\n## ", 1)[0]
-            allowed_values = {
-                "feedback_type": ["Feature Request", "Usability Issue", "Bug", "Positive Feedback", "Other"],
-                "product_theme": ["Onboarding", "Performance", "Navigation", "Reporting", "Integrations", "Billing", "Permissions", "Reliability", "Other"],
-                "severity": ["High", "Medium", "Low"],
-            }
-            schema = {
-                "type": "object",
-                "properties": {
-                    **{name: {"type": "string", "enum": values} for name, values in allowed_values.items()},
-                    "reason": {"type": "string"},
-                },
-                "required": [*allowed_values, "reason"],
-                "additionalProperties": False,
-            }
-            with st.spinner("Classifying test feedback..."):
-                with OpenAI(max_retries=0, timeout=30.0) as client:
-                    response = client.responses.create(
-                        model="gpt-4o-mini",
-                        instructions=(
-                            "Classify the feedback using the README taxonomy below as the source of truth. "
-                            "Return exactly feedback_type, product_theme, severity, and a short reason "
-                            "(one sentence) as JSON. Use only the allowed classification values. "
-                            "If feedback_type or product_theme cannot be reliably classified, use Other "
-                            "rather than guessing. Do not infer unstated workflow impact.\n\n" + taxonomy
-                        ),
-                        input=test_feedback,
-                        text={"format": {
-                            "type": "json_schema", "name": "feedback_classification",
-                            "strict": True, "schema": schema,
-                        }},
-                        store=False,
-                    )
-            if response.status != "completed" or not response.output_text:
-                st.warning("The model did not return a complete classification. Please try again.")
-            else:
-                classification = json.loads(response.output_text)
-                st.json(classification)
-        except OpenAIError as error:
-            st.error("The OpenAI request failed.")
-            st.json({
-                "category": type(error).__name__,
-                "http_status": getattr(error, "status_code", None),
-                "error_code": getattr(error, "code", None),
-                "error_type": getattr(error, "type", None),
-            })
-        except (OSError, IndexError, ValueError):
-            st.error("Could not read the README taxonomy or parse the classification.")
+            with OpenAI(max_retries=0, timeout=30.0) as client:
+                results = run_evaluation(
+                    client,
+                    selected_prompt,
+                    project_dir / "evaluation" / "feedback_cases.json",
+                    on_progress=show_progress,
+                )
+            st.session_state["evaluation_results"] = results
+        except (OSError, ValueError, OpenAIError) as error:
+            st.error(f"Could not start evaluation: {type(error).__name__}. Check the prompt and test-case files and API configuration.")
+        finally:
+            progress.empty()
+
+results = st.session_state.get("evaluation_results", [])
+if results:
+    st.caption(
+        f"Displayed run: {results[0]['prompt_file']} | "
+        f"Model: {results[0]['model']} | UTC: {results[0]['run_time']}"
+    )
+    summary = field_accuracy(results)
+    for column, (field, counts) in zip(st.columns(3), summary.items()):
+        passed, scored = counts["passed"], counts["scored"]
+        label = f"{passed}/{scored} ({passed / scored:.0%})" if scored else "Not scored"
+        column.metric(field, label)
+    st.caption(
+        "Null expectations are not scored. Failed requests count as non-matches for scored fields. "
+        "Partial means all scored fields match, but at least one field is not scored."
+    )
+    results_df = pd.DataFrame(results)
+    display_df = results_df.drop(columns=["prompt_file", "model", "run_time"]).copy()
+    for field in summary:
+        display_df[f"expected_{field}"] = display_df[f"expected_{field}"].fillna("Not scored")
+    st.dataframe(display_df)
+    st.download_button(
+        "Download evaluation results (CSV)",
+        data=results_df.to_csv(index=False),
+        file_name=f"day7_{Path(results[0]['prompt_file']).stem}_results.csv",
+        mime="text/csv",
+    )
 
 uploaded_file = st.file_uploader("Upload customer feedback", type=["csv"])
 st.caption(

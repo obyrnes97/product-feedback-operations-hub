@@ -72,3 +72,52 @@ Customer feedback → CSV → application
 
 **Data flow**\
 CSV → Streamlit upload → pandas → DataFrame → displayed in app
+
+## Day 7 — Prompt Design and Evaluation
+
+**What I built**
+
+- Created a versioned classification prompt system and saved Prompt V1 in `prompts/feedback_classification_v1.md`.
+- Created a reusable evaluation harness using 10 fixed feedback comments with expected classifications.
+- Added prompt-version selection and evaluation results to Streamlit.
+- Created Prompt V2 only after V1 testing showed specific failure patterns.
+
+**V1 results**
+
+- `feedback_type`: 8/10 (80%).
+- `product_theme`: 6/10 (60%).
+- `severity`: 8/8 scored cases (100%).
+
+The main problems were:
+
+- The model sometimes chose `product_theme` based on the feature or business area mentioned rather than the nature of the problem.
+- The model sometimes inferred a usability or navigation problem from ambiguous feedback without enough evidence.
+
+**Changes made in V2**
+
+- Added guidance to classify product theme according to the nature of the primary problem.
+- Added stronger guidance requiring evidence before assigning a specific feedback type or product theme.
+- Preserved V1 instead of overwriting it so the versions could be compared.
+- Did not change the severity rules.
+
+**V2 results**
+
+- `feedback_type`: 9/10 (90%).
+- `product_theme`: 8/10 (80%).
+- `severity`: 7/8 scored cases (87.5%).
+
+**What I learned**
+
+- Evaluate prompt quality using repeatable test cases rather than judging a few outputs informally.
+- Target prompt changes at observed failure patterns rather than rewriting everything.
+- LLM outputs can vary between runs. A small evaluation set and a single run provide useful signals, but do not prove production-level accuracy.
+- Versioning prompts makes it possible to compare changes and avoid losing earlier versions.
+- Keep expected answers separate from the information sent to the model so they do not influence its answers and contaminate the evaluation.
+- Structured JSON makes model output easier for Python to validate and compare.
+
+**Remaining limitations**
+
+- V2 still misclassified some test cases.
+- The 10-case evaluation set is small.
+- Ambiguous severity is difficult to evaluate because the taxonomy only allows High, Medium, or Low. Two cases deliberately had no expected severity and were excluded from severity scoring.
+- Before production use, I would expand the evaluation dataset and run repeated evaluations.

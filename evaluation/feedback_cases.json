@@ -1,0 +1,102 @@
+[
+  {
+    "case_id": "D7-01",
+    "feedback_text": "I love the new reporting dashboard. It makes my weekly reporting much easier.",
+    "expected": {
+      "feedback_type": "Positive Feedback",
+      "product_theme": "Reporting",
+      "severity": "Low"
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D7-02",
+    "feedback_text": "Every time I try to export my monthly report, the application crashes and I have to start again.",
+    "expected": {
+      "feedback_type": "Bug",
+      "product_theme": "Reliability",
+      "severity": "High"
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D7-03",
+    "feedback_text": "It takes me a while to find the billing settings, but once I get there I can update my payment details without any problems.",
+    "expected": {
+      "feedback_type": "Usability Issue",
+      "product_theme": "Navigation",
+      "severity": "Medium"
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D7-04",
+    "feedback_text": "It would be really useful if I could connect the platform to Salesforce. Right now I have to manually copy the customer data across.",
+    "expected": {
+      "feedback_type": "Feature Request",
+      "product_theme": "Integrations",
+      "severity": "Medium"
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D7-05",
+    "feedback_text": "The dashboard isn't working the way I expected.",
+    "expected": {
+      "feedback_type": "Other",
+      "product_theme": "Other",
+      "severity": null
+    },
+    "evaluation_note": "Severity is deliberately unscored because workflow impact is unspecified and the current taxonomy has no unknown/uncertain severity."
+  },
+  {
+    "case_id": "D7-06",
+    "feedback_text": "The permissions page loads correctly, but I find the role settings confusing and I'm never sure which access level to select.",
+    "expected": {
+      "feedback_type": "Usability Issue",
+      "product_theme": "Permissions",
+      "severity": "Medium"
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D7-07",
+    "feedback_text": "The app sometimes disconnects from Slack and I have to reconnect it before I can continue syncing data.",
+    "expected": {
+      "feedback_type": "Bug",
+      "product_theme": "Integrations",
+      "severity": "Medium"
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D7-08",
+    "feedback_text": "I need to export reports as PDFs for our regulator, but the product doesn't support PDF exports. Without this I can't complete our monthly regulatory submission.",
+    "expected": {
+      "feedback_type": "Feature Request",
+      "product_theme": "Reporting",
+      "severity": "High"
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D7-09",
+    "feedback_text": "Invoices take about 15 seconds to open. They always load eventually, but the delay slows me down when I'm reviewing several invoices.",
+    "expected": {
+      "feedback_type": "Usability Issue",
+      "product_theme": "Performance",
+      "severity": "Medium"
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D7-10",
+    "feedback_text": "The new homepage looks different.",
+    "expected": {
+      "feedback_type": "Other",
+      "product_theme": "Other",
+      "severity": null
+    },
+    "evaluation_note": "Severity is deliberately unscored because workflow impact is unspecified and the current taxonomy has no unknown/uncertain severity."
+  }
+]
