@@ -103,7 +103,7 @@ def run_evaluation(client, prompt_path, cases_path, on_progress=None):
                 raise ValueError("The model did not return a complete classification.")
             parsed = json.loads(response.output_text)
             if not isinstance(parsed, dict) or set(parsed) != set(SCHEMA["required"]):
-                raise ValueError("The response must contain exactly the five classification fields.")
+                raise ValueError("The AI returned an incomplete answer for this feedback item. We couldn't use the result. Please try running the evaluation again.")
             for field, allowed in ALLOWED_VALUES.items():
                 if parsed[field] not in allowed:
                     raise ValueError(f"Invalid value for {field}.")
