@@ -54,6 +54,22 @@ Each feedback item must receive exactly one severity classification.
 
 Severity should be determined primarily by user/workflow impact rather than feedback type. A typical feature request should be Medium, but a feature request may be High if the feedback explicitly states that the missing capability prevents or seriously disrupts an important workflow. Positive feedback should be Low.
 
+## Structured LLM Output
+
+The V3 evaluation asks the LLM to return structured JSON with named fields rather than free text. Each response must contain exactly these five fields:
+
+- `feedback_type`: a value from the feedback type taxonomy above.
+- `product_theme`: a value from the product theme taxonomy above.
+- `severity`: a value from the severity taxonomy above.
+- `summary`: a concise one-sentence summary preserving the core issue, request, or sentiment in the customer's feedback.
+- `confidence`: a numeric value between 0 and 1 representing the model's confidence in its classification. 1 means very confident; values closer to 0 mean increasingly uncertain.
+
+The application validates each response before using it. It checks that all five fields are present with no extra fields, the classifications use allowed taxonomy values, the summary is a string (text), and confidence is a number within the allowed range. Invalid responses are recorded as errors in the evaluation results.
+
+Structured output gives the application a predictable format to read, display, and export. Validation catches missing fields and invalid values before they are used. These checks make the AI integration more reliable, but do not guarantee that the model's classification is correct.
+
+**Future capability:** Low-confidence outputs could be flagged for human review. This is not currently implemented.
+
 ## Non-Goals
 
 For this MVP, we will not:

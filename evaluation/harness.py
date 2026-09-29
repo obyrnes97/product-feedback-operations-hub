@@ -1,4 +1,4 @@
-"""Small, sequential runner for the fixed Day 7 prompt evaluation."""
+"""Sequential prompt evaluation with five-field classification validation."""
 
 import json
 from datetime import datetime, timezone
@@ -14,10 +14,14 @@ ALLOWED_VALUES = {
 SCHEMA = {
     "type": "object",
     "properties": {
-        field: {"type": "string", "enum": values}
-        for field, values in ALLOWED_VALUES.items()
+        **{
+            field: {"type": "string", "enum": values}
+            for field, values in ALLOWED_VALUES.items()
+        },
+        "summary": {"type": "string"},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
     },
-    "required": list(ALLOWED_VALUES),
+    "required": [*ALLOWED_VALUES, "summary", "confidence"],
     "additionalProperties": False,
 }
 
@@ -45,6 +49,8 @@ def compare_result(case, actual, error=""):
         row[f"actual_{field}"] = value
         row[f"{field}_match"] = match
 
+    row["summary"] = actual.get("summary")
+    row["confidence"] = actual.get("confidence")
     row["failed_fields"] = ", ".join(failed_fields) or "None"
     if error:
         row["overall"] = "Error"
@@ -96,11 +102,21 @@ def run_evaluation(client, prompt_path, cases_path, on_progress=None):
             if response.status != "completed" or not response.output_text:
                 raise ValueError("The model did not return a complete classification.")
             parsed = json.loads(response.output_text)
-            if not isinstance(parsed, dict) or set(parsed) != set(ALLOWED_VALUES):
-                raise ValueError("The response must contain exactly the three classification fields.")
+            if not isinstance(parsed, dict) or set(parsed) != set(SCHEMA["required"]):
+                raise ValueError("The response must contain exactly the five classification fields.")
             for field, allowed in ALLOWED_VALUES.items():
                 if parsed[field] not in allowed:
                     raise ValueError(f"Invalid value for {field}.")
+            if not isinstance(parsed["summary"], str):
+                raise ValueError("summary must be a string.")
+            confidence = parsed["confidence"]
+            # Python treats booleans as integers; they are not confidence scores.
+            if (
+                isinstance(confidence, bool)
+                or not isinstance(confidence, (int, float))
+                or not 0 <= confidence <= 1
+            ):
+                raise ValueError("confidence must be a number between 0 and 1.")
             actual = parsed
         except OpenAIError as exc:
             # Avoid exposing raw request data or credentials in the results.
