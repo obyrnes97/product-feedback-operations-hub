@@ -1,4 +1,6 @@
+import hashlib
 import os
+from io import BytesIO
 from pathlib import Path
 
 import pandas as pd
@@ -6,7 +8,7 @@ import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI, OpenAIError
 
-from evaluation.harness import field_accuracy, run_evaluation
+from evaluation.harness import classify_feedback, field_accuracy, run_evaluation
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
@@ -86,14 +88,28 @@ st.caption(
     "`customer_type`, `source`, and `product_area`."
 )
 
+classification_fields = [
+    "feedback_type", "product_theme", "severity", "summary", "confidence",
+]
+output_columns = classification_fields + ["classification_status", "classification_error"]
+uploaded_bytes = uploaded_file.getvalue() if uploaded_file is not None else None
+upload_key = hashlib.sha256(uploaded_bytes).hexdigest() if uploaded_bytes is not None else None
+if st.session_state.get("classification_upload_key") != upload_key:
+    st.session_state.pop("classification_results", None)
+    st.session_state["classification_upload_key"] = upload_key
+
 if uploaded_file is not None:
     try:
-        df = pd.read_csv(uploaded_file)
+        # Keep original CSV values, including leading zeros and literal "NA" IDs.
+        df = pd.read_csv(BytesIO(uploaded_bytes), dtype=str, keep_default_na=False)
     except pd.errors.EmptyDataError:
         st.error(
             "The uploaded CSV has no data or headers. "
             "Please add the required column headers and at least one feedback record."
         )
+        st.stop()
+    except (pd.errors.ParserError, UnicodeDecodeError):
+        st.error("Could not read the CSV. Please upload a valid UTF-8 CSV file.")
         st.stop()
     required_columns = [
         "feedback_id",
@@ -104,11 +120,19 @@ if uploaded_file is not None:
         "product_area",
     ]
     missing_columns = [column for column in required_columns if column not in df.columns]
+    conflicting_columns = [column for column in output_columns if column in df.columns]
 
     if missing_columns:
         st.error(f"Missing required columns: {', '.join(missing_columns)}")
     elif df.empty:
         st.error("The uploaded CSV is empty. Please add at least one feedback record.")
+    elif len(df) > 20:
+        st.error(f"The CSV contains {len(df)} records. Please upload at most 20 records.")
+    elif conflicting_columns:
+        st.error(
+            "CSV columns conflict with classification output columns. "
+            f"Please rename these columns: {', '.join(conflicting_columns)}"
+        )
     else:
         blank_feedback = df["feedback_text"].fillna("").astype(str).str.strip().eq("")
         if blank_feedback.any():
@@ -129,3 +153,55 @@ if uploaded_file is not None:
                 )
             else:
                 st.dataframe(df)
+                if st.button("Classify feedback"):
+                    st.session_state.pop("classification_results", None)
+                    if not os.getenv("OPENAI_API_KEY", "").strip():
+                        st.warning("Add OPENAI_API_KEY to your local .env file before classifying.")
+                    else:
+                        progress = st.progress(0, text="Starting classification...")
+                        try:
+                            prompt = (project_dir / "prompts" / "feedback_classification_v3.md").read_text(
+                                encoding="utf-8"
+                            )
+                            classified_rows = []
+                            with OpenAI(max_retries=0, timeout=30.0) as client:
+                                for completed, original_row in enumerate(df.to_dict("records"), start=1):
+                                    row = dict(original_row)
+                                    row.update({field: None for field in classification_fields})
+                                    row.update(classification_status="Success", classification_error="")
+                                    try:
+                                        row.update(classify_feedback(client, prompt, original_row["feedback_text"]))
+                                    except OpenAIError as error:
+                                        row.update(
+                                            classification_status="Error",
+                                            classification_error=f"OpenAI request failed ({type(error).__name__}).",
+                                        )
+                                    except ValueError:
+                                        row.update(
+                                            classification_status="Error",
+                                            classification_error="The model returned an invalid or incomplete classification.",
+                                        )
+                                    classified_rows.append(row)
+                                    progress.progress(
+                                        completed / len(df),
+                                        text=f"Processed {completed} of {len(df)} feedback records",
+                                    )
+                            st.session_state["classification_results"] = pd.DataFrame(
+                                classified_rows, columns=[*df.columns, *output_columns]
+                            )
+                        except (OSError, ValueError, OpenAIError) as error:
+                            st.error(
+                                f"Could not complete classification: {type(error).__name__}. "
+                                "Check the V3 prompt file and API configuration."
+                            )
+                        finally:
+                            progress.empty()
+
+                classification_results = st.session_state.get("classification_results")
+                if classification_results is not None:
+                    failed = int((classification_results["classification_status"] == "Error").sum())
+                    st.caption(
+                        f"Classification complete: {len(classification_results) - failed} succeeded, "
+                        f"{failed} failed."
+                    )
+                    st.dataframe(classification_results)
