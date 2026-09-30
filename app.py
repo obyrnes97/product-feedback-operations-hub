@@ -205,3 +205,29 @@ if uploaded_file is not None:
                         f"{failed} failed."
                     )
                     st.dataframe(classification_results)
+
+                    feedback_type_counts = (
+                        classification_results.loc[
+                            classification_results["classification_status"] == "Success",
+                            "feedback_type",
+                        ]
+                        .value_counts()
+                        .rename_axis("feedback_type")
+                        .reset_index(name="count")
+                    )
+                    st.caption("Classified feedback counts by feedback type")
+                    st.dataframe(feedback_type_counts, hide_index=True)
+                    st.bar_chart(feedback_type_counts, x="feedback_type", y="count")
+
+                    product_theme_counts = (
+                        classification_results.loc[
+                            classification_results["classification_status"] == "Success",
+                            "product_theme",
+                        ]
+                        .value_counts()
+                        .rename_axis("product_theme")
+                        .reset_index(name="count")
+                    )
+                    st.caption("Classified feedback counts by product theme")
+                    st.dataframe(product_theme_counts, hide_index=True)
+                    st.bar_chart(product_theme_counts, x="product_theme", y="count")
