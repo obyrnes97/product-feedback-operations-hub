@@ -26,6 +26,46 @@ SCHEMA = {
 }
 
 
+def validate_classification(parsed):
+    """Validate and return the five-field classification."""
+    if not isinstance(parsed, dict) or set(parsed) != set(SCHEMA["required"]):
+        raise ValueError("The AI returned an incomplete answer for this feedback item. We couldn't use the result. Please try running the evaluation again.")
+    for field, allowed in ALLOWED_VALUES.items():
+        if parsed[field] not in allowed:
+            raise ValueError(f"Invalid value for {field}.")
+    if not isinstance(parsed["summary"], str):
+        raise ValueError("summary must be a string.")
+    confidence = parsed["confidence"]
+    # Python treats booleans as integers; they are not confidence scores.
+    if (
+        isinstance(confidence, bool)
+        or not isinstance(confidence, (int, float))
+        or not 0 <= confidence <= 1
+    ):
+        raise ValueError("confidence must be a number between 0 and 1.")
+    return parsed
+
+
+def classify_feedback(client, prompt, feedback_text):
+    """Request and validate a classification for one feedback item."""
+    response = client.responses.create(
+        model=MODEL,
+        instructions=prompt,
+        input=feedback_text,
+        text={"format": {
+            "type": "json_schema",
+            "name": "feedback_classification",
+            "strict": True,
+            "schema": SCHEMA,
+        }},
+        store=False,
+    )
+    if response.status != "completed" or not response.output_text:
+        raise ValueError("The model did not return a complete classification.")
+    parsed = json.loads(response.output_text)
+    return validate_classification(parsed)
+
+
 def compare_result(case, actual, error=""):
     """Build one table row. Missing answers fail scored fields."""
     row = {
@@ -87,37 +127,7 @@ def run_evaluation(client, prompt_path, cases_path, on_progress=None):
         error = ""
         try:
             # Expected answers and evaluation notes are never sent to the API.
-            response = client.responses.create(
-                model=MODEL,
-                instructions=prompt,
-                input=case["feedback_text"],
-                text={"format": {
-                    "type": "json_schema",
-                    "name": "feedback_classification",
-                    "strict": True,
-                    "schema": SCHEMA,
-                }},
-                store=False,
-            )
-            if response.status != "completed" or not response.output_text:
-                raise ValueError("The model did not return a complete classification.")
-            parsed = json.loads(response.output_text)
-            if not isinstance(parsed, dict) or set(parsed) != set(SCHEMA["required"]):
-                raise ValueError("The AI returned an incomplete answer for this feedback item. We couldn't use the result. Please try running the evaluation again.")
-            for field, allowed in ALLOWED_VALUES.items():
-                if parsed[field] not in allowed:
-                    raise ValueError(f"Invalid value for {field}.")
-            if not isinstance(parsed["summary"], str):
-                raise ValueError("summary must be a string.")
-            confidence = parsed["confidence"]
-            # Python treats booleans as integers; they are not confidence scores.
-            if (
-                isinstance(confidence, bool)
-                or not isinstance(confidence, (int, float))
-                or not 0 <= confidence <= 1
-            ):
-                raise ValueError("confidence must be a number between 0 and 1.")
-            actual = parsed
+            actual = classify_feedback(client, prompt, case["feedback_text"])
         except OpenAIError as exc:
             # Avoid exposing raw request data or credentials in the results.
             error = f"OpenAI request failed ({type(exc).__name__})."
