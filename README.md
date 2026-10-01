@@ -70,6 +70,19 @@ Structured output gives the application a predictable format to read, display, a
 
 **Future capability:** Low-confidence outputs could be flagged for human review. This is not currently implemented.
 
+## Evaluation
+
+For Day 12, we created a manually labelled 20-case evaluation dataset.
+
+| Prompt | Feedback type accuracy | Product theme accuracy |
+|---|---|---|
+| V3 | 90% (18/20) | 100% (20/20) |
+| V4 | 100% (20/20) | 100% (20/20) |
+
+V3 repeatedly classified slow or degraded performance as `Bug` instead of `Usability Issue`. V4 added one targeted rule clarifying that slow performance is a `Usability Issue` when functionality still works. The incorrect V3 examples were retained so the improvement is traceable.
+
+These results apply only to this small 20-case evaluation set and do not imply 100% accuracy on unseen feedback.
+
 ## Non-Goals
 
 For this MVP, we will not:
