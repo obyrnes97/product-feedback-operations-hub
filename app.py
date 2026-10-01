@@ -21,8 +21,8 @@ if os.getenv("OPENAI_API_KEY", "").strip():
 else:
     st.warning("OpenAI API key is not set. Add it to your local .env file.")
 
-st.subheader("Day 7 prompt evaluation")
-st.caption("Run the fixed 10 test comments. One API call per case; expected answers stay local.")
+st.subheader("Day 12 prompt evaluation")
+st.caption("Run the fixed 20 test comments. One API call per case; expected answers stay local.")
 project_dir = Path(__file__).resolve().parent
 prompt_files = sorted((project_dir / "prompts").glob("feedback_classification_v*.md"))
 selected_prompt = st.selectbox(
@@ -46,7 +46,7 @@ if st.button("Run evaluation", disabled=not prompt_files):
                 results = run_evaluation(
                     client,
                     selected_prompt,
-                    project_dir / "evaluation" / "feedback_cases.json",
+                    project_dir / "evaluation" / "day12_evaluation_cases.json",
                     on_progress=show_progress,
                 )
             st.session_state["evaluation_results"] = results
@@ -78,7 +78,7 @@ if results:
     st.download_button(
         "Download evaluation results (CSV)",
         data=results_df.to_csv(index=False),
-        file_name=f"day7_{Path(results[0]['prompt_file']).stem}_results.csv",
+        file_name=f"day12_{Path(results[0]['prompt_file']).stem}_results.csv",
         mime="text/csv",
     )
 
@@ -166,7 +166,7 @@ if uploaded_file is not None:
                     else:
                         progress = st.progress(0, text="Starting classification...")
                         try:
-                            prompt = (project_dir / "prompts" / "feedback_classification_v3.md").read_text(
+                            prompt = (project_dir / "prompts" / "feedback_classification_v4.md").read_text(
                                 encoding="utf-8"
                             )
                             classified_rows = []
@@ -198,7 +198,7 @@ if uploaded_file is not None:
                         except (OSError, ValueError, OpenAIError) as error:
                             st.error(
                                 f"Could not complete classification: {type(error).__name__}. "
-                                "Check the V3 prompt file and API configuration."
+                                "Check the V4 prompt file and API configuration."
                             )
                         finally:
                             progress.empty()

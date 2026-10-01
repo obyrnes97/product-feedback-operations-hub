@@ -1,0 +1,202 @@
+[
+  {
+    "case_id": "D12-01",
+    "feedback_text": "The dashboard takes nearly 30 seconds to load every morning.",
+    "expected": {
+      "feedback_type": "Usability Issue",
+      "product_theme": "Performance",
+      "severity": null
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D12-02",
+    "feedback_text": "It would be great if we could connect our account directly to Salesforce.",
+    "expected": {
+      "feedback_type": "Feature Request",
+      "product_theme": "Integrations",
+      "severity": null
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D12-03",
+    "feedback_text": "I can't access the admin settings even though I'm an account administrator.",
+    "expected": {
+      "feedback_type": "Bug",
+      "product_theme": "Permissions",
+      "severity": null
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D12-04",
+    "feedback_text": "The reporting dashboard is really easy to use and saves me a lot of time.",
+    "expected": {
+      "feedback_type": "Positive Feedback",
+      "product_theme": "Reporting",
+      "severity": null
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D12-05",
+    "feedback_text": "The application keeps crashing when I try to open a customer record.",
+    "expected": {
+      "feedback_type": "Bug",
+      "product_theme": "Reliability",
+      "severity": null
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D12-06",
+    "feedback_text": "Could you add the ability to schedule reports to be sent automatically?",
+    "expected": {
+      "feedback_type": "Feature Request",
+      "product_theme": "Reporting",
+      "severity": null
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D12-07",
+    "feedback_text": "I was charged twice for my subscription this month.",
+    "expected": {
+      "feedback_type": "Bug",
+      "product_theme": "Billing",
+      "severity": null
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D12-08",
+    "feedback_text": "The initial account setup was straightforward and much easier than I expected.",
+    "expected": {
+      "feedback_type": "Positive Feedback",
+      "product_theme": "Onboarding",
+      "severity": null
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D12-09",
+    "feedback_text": "It takes too many clicks to find the customer settings page.",
+    "expected": {
+      "feedback_type": "Usability Issue",
+      "product_theme": "Navigation",
+      "severity": null
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D12-10",
+    "feedback_text": "Our Slack connection stopped syncing customer updates yesterday.",
+    "expected": {
+      "feedback_type": "Bug",
+      "product_theme": "Integrations",
+      "severity": null
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D12-11",
+    "feedback_text": "I'd like different team members to have different levels of access.",
+    "expected": {
+      "feedback_type": "Feature Request",
+      "product_theme": "Permissions",
+      "severity": null
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D12-12",
+    "feedback_text": "The analytics page has become noticeably slower since the latest update.",
+    "expected": {
+      "feedback_type": "Usability Issue",
+      "product_theme": "Performance",
+      "severity": null
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D12-13",
+    "feedback_text": "I can't generate the monthly report, so I can't complete our management reporting.",
+    "expected": {
+      "feedback_type": "Bug",
+      "product_theme": "Reporting",
+      "severity": null
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D12-14",
+    "feedback_text": "The sidebar makes it really easy to move between different sections.",
+    "expected": {
+      "feedback_type": "Positive Feedback",
+      "product_theme": "Navigation",
+      "severity": null
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D12-15",
+    "feedback_text": "New users on my team don't understand what they're supposed to do during setup.",
+    "expected": {
+      "feedback_type": "Usability Issue",
+      "product_theme": "Onboarding",
+      "severity": null
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D12-16",
+    "feedback_text": "The system logged me out three times today while I was working.",
+    "expected": {
+      "feedback_type": "Bug",
+      "product_theme": "Reliability",
+      "severity": null
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D12-17",
+    "feedback_text": "I'd like to be able to pay annually rather than monthly.",
+    "expected": {
+      "feedback_type": "Feature Request",
+      "product_theme": "Billing",
+      "severity": null
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D12-18",
+    "feedback_text": "Can you add a dark mode?",
+    "expected": {
+      "feedback_type": "Feature Request",
+      "product_theme": "Other",
+      "severity": null
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D12-19",
+    "feedback_text": "Everything worked perfectly today.",
+    "expected": {
+      "feedback_type": "Positive Feedback",
+      "product_theme": "Other",
+      "severity": null
+    },
+    "evaluation_note": null
+  },
+  {
+    "case_id": "D12-20",
+    "feedback_text": "The new update isn't what I expected and I'm not sure I like it.",
+    "expected": {
+      "feedback_type": "Other",
+      "product_theme": "Other",
+      "severity": null
+    },
+    "evaluation_note": null
+  }
+]

@@ -1,0 +1,21 @@
+feedback_id,date,feedback_text,customer_type,source,product_area
+F031,2026-09-01,The dashboard takes nearly 30 seconds to load every morning.,Enterprise,Support,Dashboard
+F032,2026-09-02,It would be great if we could connect our account directly to Salesforce.,Mid-Market,Survey,Integrations
+F033,2026-09-03,I can't access the admin settings even though I'm an account administrator.,SMB,Support,User Management
+F034,2026-09-04,The reporting dashboard is really easy to use and saves me a lot of time.,Enterprise,Survey,Reports
+F035,2026-09-05,The application keeps crashing when I try to open a customer record.,Enterprise,Customer Success,General Platform
+F036,2026-09-06,Could you add the ability to schedule reports to be sent automatically?,Mid-Market,Support,Reports
+F037,2026-09-07,I was charged twice for my subscription this month.,SMB,Sales,Billing
+F038,2026-09-08,The initial account setup was straightforward and much easier than I expected.,Mid-Market,Support,Onboarding
+F039,2026-09-09,It takes too many clicks to find the customer settings page.,SMB,Survey,User Management
+F040,2026-09-10,Our Slack connection stopped syncing customer updates yesterday.,Enterprise,Customer Success,Integrations
+F041,2026-09-11,I'd like different team members to have different levels of access.,Enterprise,Support,User Management
+F042,2026-09-12,The analytics page has become noticeably slower since the latest update.,Mid-Market,Sales,Dashboard
+F043,2026-09-13,"I can't generate the monthly report, so I can't complete our management reporting.",SMB,Survey,Reports
+F044,2026-09-14,The sidebar makes it really easy to move between different sections.,Mid-Market,Customer Success,General Platform
+F045,2026-09-15,New users on my team don't understand what they're supposed to do during setup.,SMB,Customer Success,Onboarding
+F046,2026-09-16,The system logged me out three times today while I was working.,Enterprise,Support,General Platform
+F047,2026-09-17,I'd like to be able to pay annually rather than monthly.,SMB,Survey,Billing
+F048,2026-09-18,Can you add a dark mode?,Mid-Market,Support,General Platform
+F049,2026-09-19,Everything worked perfectly today.,Enterprise,Survey,General Platform
+F050,2026-09-20,The new update isn't what I expected and I'm not sure I like it.,Mid-Market,Sales,General Platform
