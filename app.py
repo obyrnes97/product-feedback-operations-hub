@@ -82,11 +82,16 @@ if results:
         mime="text/csv",
     )
 
-uploaded_file = st.file_uploader("Upload customer feedback", type=["csv"])
+st.caption("Upload a CSV (.csv) file containing customer feedback. Maximum 20 feedback records.")
 st.caption(
-    "Expected CSV columns: `feedback_id`, `date`, `feedback_text`, "
+    "Required columns: `feedback_id`, `date`, `feedback_text`, "
     "`customer_type`, `source`, and `product_area`."
 )
+st.caption(
+    "Privacy: Do not upload confidential or personally identifiable customer information "
+    "unless this application is approved for that data."
+)
+uploaded_file = st.file_uploader("Upload customer feedback", type=["csv"])
 
 classification_fields = [
     "feedback_type", "product_theme", "severity", "summary", "confidence",
@@ -152,6 +157,7 @@ if uploaded_file is not None:
                     f"Duplicated ID values: {', '.join(duplicated_ids)}"
                 )
             else:
+                st.success(f"Upload successful: **{len(df)}** feedback records uploaded.")
                 st.dataframe(df)
                 if st.button("Classify feedback"):
                     st.session_state.pop("classification_results", None)
@@ -200,11 +206,22 @@ if uploaded_file is not None:
                 classification_results = st.session_state.get("classification_results")
                 if classification_results is not None:
                     failed = int((classification_results["classification_status"] == "Error").sum())
-                    st.caption(
-                        f"Classification complete: {len(classification_results) - failed} succeeded, "
-                        f"{failed} failed."
+                    st.info(
+                        f"Classification complete: **{len(classification_results) - failed}** records successfully processed; "
+                        f"**{failed}** records failed."
                     )
+                    if failed > 0:
+                        st.warning(
+                            "Some records could not be classified. "
+                            "Review the `classification_error` column for details."
+                        )
                     st.dataframe(classification_results)
+                    st.download_button(
+                        "Download results",
+                        data=classification_results.to_csv(index=False),
+                        file_name="analysed_feedback_results.csv",
+                        mime="text/csv",
+                    )
 
                     feedback_type_counts = (
                         classification_results.loc[
