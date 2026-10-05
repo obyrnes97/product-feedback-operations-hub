@@ -18,6 +18,10 @@ The MVP will:
 - Provide simple summary charts or metrics.
 - Allow the structured results to be downloaded.
 
+## Example CSV files
+
+`demo_feedback.csv` is a valid 20-record example for testing the app, containing F001–F020 from the original sample with the same columns and values. `sample_feedback.csv` contains 30 records and can be used to demonstrate the app's maximum-record validation: uploads containing more than 20 records are rejected.
+
 ## Feedback Taxonomy
 
 ### `feedback_type`
