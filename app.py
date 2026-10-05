@@ -24,15 +24,23 @@ else:
 st.subheader("Day 12 prompt evaluation")
 st.caption("Run the fixed 20 test comments. One API call per case; expected answers stay local.")
 project_dir = Path(__file__).resolve().parent
-prompt_files = sorted((project_dir / "prompts").glob("feedback_classification_v*.md"))
-selected_prompt = st.selectbox(
-    "Prompt version", prompt_files, format_func=lambda path: path.name,
-    disabled=not prompt_files,
-)
-if not prompt_files:
-    st.warning("No classification prompt files were found in prompts/.")
+active_prompt_path = project_dir / "prompts" / "feedback_classification_v4.md"
+active_prompt_version = active_prompt_path.stem.rsplit("_", 1)[-1].upper()
+prompt_available = active_prompt_path.is_file()
+st.caption(f"Evaluating the current classifier: {active_prompt_version}.")
+if not prompt_available:
+    st.error(
+        f"The current classifier prompt ({active_prompt_path.name}) is missing. "
+        "Restore it in prompts/ to enable evaluation and feedback classification."
+    )
 
-if st.button("Run evaluation", disabled=not prompt_files):
+previous_results = st.session_state.get("evaluation_results", [])
+if not prompt_available or any(
+    row.get("prompt_file") != active_prompt_path.name for row in previous_results
+):
+    st.session_state.pop("evaluation_results", None)
+
+if st.button("Run evaluation", disabled=not prompt_available):
     if not os.getenv("OPENAI_API_KEY", "").strip():
         st.warning("Add OPENAI_API_KEY to your local .env file before testing.")
     else:
@@ -45,7 +53,7 @@ if st.button("Run evaluation", disabled=not prompt_files):
             with OpenAI(max_retries=0, timeout=30.0) as client:
                 results = run_evaluation(
                     client,
-                    selected_prompt,
+                    active_prompt_path,
                     project_dir / "evaluation" / "day12_evaluation_cases.json",
                     on_progress=show_progress,
                 )
@@ -159,16 +167,14 @@ if uploaded_file is not None:
             else:
                 st.success(f"Upload successful: **{len(df)}** feedback records uploaded.")
                 st.dataframe(df)
-                if st.button("Classify feedback"):
+                if st.button("Classify feedback", disabled=not prompt_available):
                     st.session_state.pop("classification_results", None)
                     if not os.getenv("OPENAI_API_KEY", "").strip():
                         st.warning("Add OPENAI_API_KEY to your local .env file before classifying.")
                     else:
                         progress = st.progress(0, text="Starting classification...")
                         try:
-                            prompt = (project_dir / "prompts" / "feedback_classification_v4.md").read_text(
-                                encoding="utf-8"
-                            )
+                            prompt = active_prompt_path.read_text(encoding="utf-8")
                             classified_rows = []
                             with OpenAI(max_retries=0, timeout=30.0) as client:
                                 for completed, original_row in enumerate(df.to_dict("records"), start=1):
@@ -198,7 +204,7 @@ if uploaded_file is not None:
                         except (OSError, ValueError, OpenAIError) as error:
                             st.error(
                                 f"Could not complete classification: {type(error).__name__}. "
-                                "Check the V4 prompt file and API configuration."
+                                f"Check the {active_prompt_version} prompt file and API configuration."
                             )
                         finally:
                             progress.empty()
