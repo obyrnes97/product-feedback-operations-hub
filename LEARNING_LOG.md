@@ -257,3 +257,161 @@ CSV upload → input validation → Classify feedback → each row's feedback te
 
 - `3f526b5` — Refactor reusable LLM classification logic.
 - `d0cf0ca` — Add batch feedback classification workflow.
+
+## Day 10 — Add Product Operations Insights
+
+**What I built**
+
+- Added count tables and bar charts for feedback type and product theme.
+- Included only successfully classified records in these summaries.
+
+**What I learned**
+
+- Grouping individual classifications into counts makes common feedback categories easier to see.
+- Failed classifications should remain visible in the results but should not be counted as valid categories.
+
+**Technical concepts**
+
+- Used pandas filtering and `value_counts()` to count categories.
+- Used `st.dataframe()` and `st.bar_chart()` to display the counts.
+
+**Problems and solutions**
+
+- Individual results did not provide an overall picture of the uploaded feedback. Added two category summaries.
+- No separate debugging incident is documented in this commit.
+
+**Design decisions**
+
+- Kept insights to simple frequency counts. The charts support review but do not automatically prioritise feedback or weight it by severity.
+
+**Commit**
+
+- `1f3ff78` — Add Day 10 feedback type and product theme counts and charts.
+
+## Day 11 — Export Results and Improve Upload Guidance
+
+**What I built**
+
+- Added a download button for `analysed_feedback_results.csv`.
+- Exported original feedback alongside classification outputs, status and error information.
+- Clarified required CSV columns, the existing 20-record limit and appropriate data use.
+- Added upload confirmation and clearer completion and partial-failure messages.
+
+**What I learned**
+
+- A downloadable file lets users continue working with the results outside the app.
+- Clear instructions and status messages help users understand what to upload and whether processing succeeded.
+
+**Technical concepts**
+
+- Used `to_csv(index=False)` to create a CSV without an extra pandas row-number column.
+- Used `st.download_button()` to make the results downloadable.
+- Used success, information and warning messages to communicate different outcomes.
+
+**Problems and solutions**
+
+- Classified upload results could be viewed but did not yet have their own download button. Added CSV export.
+- Partial failures needed clearer attention. Added a warning directing users to `classification_error`.
+
+**Design decisions**
+
+- Kept failed rows in the export so users can identify what needs attention.
+- Used CSV export without adding persistent storage or external integrations.
+
+**Commit**
+
+- `dcda47e` — Complete Day 11 results export and upload guidance.
+
+## Day 12 — Evaluate and Improve Classification
+
+**What I built**
+
+- Added a manually labelled 20-case evaluation dataset and matching uploadable CSV.
+- Connected the evaluation interface to the new dataset.
+- Created V4 with a targeted rule for slow but functioning features.
+- Switched uploaded-feedback classification from V3 to V4 and documented development results.
+
+**What I learned**
+
+- Comparing model answers with expected labels helps identify specific classification mistakes.
+- A targeted prompt change can address an observed error without changing the model or output structure.
+- Accuracy on a small evaluation set does not establish accuracy on unseen feedback.
+
+**Technical concepts**
+
+- Extended the existing evaluation workflow with a larger labelled dataset.
+- Compared prompt versions using per-field accuracy.
+- Kept missing expected labels unscored rather than inventing answers.
+
+**Problems and solutions**
+
+- The recorded V3 results classified slow or degraded performance as `Bug` when it should be `Usability Issue`.
+- V4 clarified that slowness alone is not a bug when the functionality still works.
+- The new dataset has no expected severity labels, so severity remains “Not scored”.
+
+**Recorded development results**
+
+| Prompt | Feedback type | Product theme |
+|---|---|---|
+| V3 | 18/20 — 90% | 20/20 — 100% |
+| V4 | 20/20 — 100% | 20/20 — 100% |
+
+These figures are recorded in the README; complete historical response exports are not stored in the repository.
+
+**Design decisions**
+
+- Preserved earlier prompts and kept the model and five-field schema unchanged.
+- Used a small, fixed dataset for focused comparison; summary and confidence were not scored for quality.
+
+**Commits**
+
+- `84f7af5` — Day 12: evaluate classifier and improve prompt accuracy.
+- `2e4c970` — Document Day 12 evaluation results.
+
+## Day 13 — Align the Classifier and Prepare the MVP for Use
+
+**What I built**
+
+- Defined one active V4 prompt shared by upload classification and evaluation.
+- Removed the prompt dropdown, added missing-prompt protection and cleared evaluation results belonging to another prompt version.
+- Created `demo_feedback.csv` with F001–F020 while preserving the original sample.
+- Simplified the interface into Upload → Classify → Results → Insights → Download, with evaluation below the main workflow.
+- Moved supporting information into expanders while keeping classified results and evaluation metrics visible.
+- Updated the README with current functionality and local setup instructions.
+- Added `.DS_Store` to `.gitignore`.
+
+**What I learned**
+
+- Shared configuration prevents two parts of an app from accidentally using different versions.
+- Results should clearly correspond to the classifier being evaluated.
+- A demo file should satisfy the app’s own input rules.
+- Clear page structure and optional detail can make an app easier to use without changing its processing behaviour.
+
+**Technical concepts**
+
+- Used one prompt path as the shared configuration.
+- Used session-state checks to remove outdated evaluation results.
+- Used Streamlit containers for page placement, expanders for supporting detail and columns for charts.
+- Used `.gitignore` to exclude unnecessary operating-system files.
+
+**Problems and solutions**
+
+- Evaluation defaulted to V1 because the dropdown used the first sorted filename, while upload classification used V4. Replaced the independent choices with one V4 setting.
+- The original 30-record sample exceeded the intentional limit. Added a separate 20-record demo instead of changing the limit or deleting historical examples.
+- The interface contained lengthy guidance and development-oriented wording. Shortened the text, separated the main workflow and made evaluation secondary.
+- The README still described parts of the app as future work and referred to V3 as current. Updated it to match the implementation.
+
+**Design decisions**
+
+- Retained V1–V3 as historical files, but removed prompt comparison from the normal user interface.
+- Preserved the original sample for demonstrating oversized-upload validation.
+- Kept detailed information accessible in expanders.
+- Left classification, evaluation calculations and the 20-record limit unchanged. Deployment preparation is complete; deployment itself has **not yet been completed**.
+
+**Commits**
+
+- `b1ae832` — Use shared V4 prompt for evaluation and classification.
+- `6dda0fd` — Add valid 20-record deployment demo CSV.
+- `2037ead` — Ignore macOS DS_Store files.
+- `5cc436d` — Simplify Streamlit layout and user guidance.
+- `40fc52d` — Update README for current MVP.
