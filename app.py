@@ -15,19 +15,15 @@ load_dotenv(Path(__file__).resolve().parent / ".env")
 st.set_page_config(page_title="Product Feedback Operations Hub")
 
 st.title("Product Feedback Operations Hub")
+st.markdown("Turn customer feedback into structured product insights with AI.")
 
-if os.getenv("OPENAI_API_KEY", "").strip():
-    st.success("OpenAI API key is loaded.")
-else:
-    st.warning("OpenAI API key is not set. Add it to your local .env file.")
+if not os.getenv("OPENAI_API_KEY", "").strip():
+    st.error("AI service is not configured. Contact the app owner.")
 
-st.subheader("Day 12 prompt evaluation")
-st.caption("Run the fixed 20 test comments. One API call per case; expected answers stay local.")
 project_dir = Path(__file__).resolve().parent
 active_prompt_path = project_dir / "prompts" / "feedback_classification_v4.md"
 active_prompt_version = active_prompt_path.stem.rsplit("_", 1)[-1].upper()
 prompt_available = active_prompt_path.is_file()
-st.caption(f"Evaluating the current classifier: {active_prompt_version}.")
 if not prompt_available:
     st.error(
         f"The current classifier prompt ({active_prompt_path.name}) is missing. "
@@ -40,217 +36,245 @@ if not prompt_available or any(
 ):
     st.session_state.pop("evaluation_results", None)
 
-if st.button("Run evaluation", disabled=not prompt_available):
-    if not os.getenv("OPENAI_API_KEY", "").strip():
-        st.warning("Add OPENAI_API_KEY to your local .env file before testing.")
-    else:
-        progress = st.progress(0, text="Starting evaluation...")
+# Reserve the main workflow first while keeping evaluation execution unchanged.
+feedback_container = st.container()
+evaluation_container = st.container()
 
-        def show_progress(completed, total):
-            progress.progress(completed / total, text=f"Completed {completed}/{total} cases")
+with evaluation_container:
+    st.divider()
+    st.markdown("#### AI Classification Evaluation")
+    st.caption("Check classification quality against 20 manually labelled examples to identify potential errors.")
 
-        try:
-            with OpenAI(max_retries=0, timeout=30.0) as client:
-                results = run_evaluation(
-                    client,
-                    active_prompt_path,
-                    project_dir / "evaluation" / "day12_evaluation_cases.json",
-                    on_progress=show_progress,
-                )
-            st.session_state["evaluation_results"] = results
-        except (OSError, ValueError, OpenAIError) as error:
-            st.error(f"Could not start evaluation: {type(error).__name__}. Check the prompt and test-case files and API configuration.")
-        finally:
-            progress.empty()
+    if st.button("Run evaluation", disabled=not prompt_available):
+        if not os.getenv("OPENAI_API_KEY", "").strip():
+            st.error("AI service is not configured. Contact the app owner.")
+        else:
+            progress = st.progress(0, text="Starting evaluation...")
 
-results = st.session_state.get("evaluation_results", [])
-if results:
-    st.caption(
-        f"Displayed run: {results[0]['prompt_file']} | "
-        f"Model: {results[0]['model']} | UTC: {results[0]['run_time']}"
-    )
-    summary = field_accuracy(results)
-    for column, (field, counts) in zip(st.columns(3), summary.items()):
-        passed, scored = counts["passed"], counts["scored"]
-        label = f"{passed}/{scored} ({passed / scored:.0%})" if scored else "Not scored"
-        column.metric(field, label)
-    st.caption(
-        "Null expectations are not scored. Failed requests count as non-matches for scored fields. "
-        "Partial means all scored fields match, but at least one field is not scored."
-    )
-    results_df = pd.DataFrame(results)
-    display_df = results_df.drop(columns=["prompt_file", "model", "run_time"]).copy()
-    for field in summary:
-        display_df[f"expected_{field}"] = display_df[f"expected_{field}"].fillna("Not scored")
-    st.dataframe(display_df)
-    st.download_button(
-        "Download evaluation results (CSV)",
-        data=results_df.to_csv(index=False),
-        file_name=f"day12_{Path(results[0]['prompt_file']).stem}_results.csv",
-        mime="text/csv",
-    )
+            def show_progress(completed, total):
+                progress.progress(completed / total, text=f"Completed {completed}/{total} cases")
 
-st.caption("Upload a CSV (.csv) file containing customer feedback. Maximum 20 feedback records.")
-st.caption(
-    "Required columns: `feedback_id`, `date`, `feedback_text`, "
-    "`customer_type`, `source`, and `product_area`."
-)
-st.caption(
-    "Privacy: Do not upload confidential or personally identifiable customer information "
-    "unless this application is approved for that data."
-)
-uploaded_file = st.file_uploader("Upload customer feedback", type=["csv"])
+            try:
+                with OpenAI(max_retries=0, timeout=30.0) as client:
+                    results = run_evaluation(
+                        client,
+                        active_prompt_path,
+                        project_dir / "evaluation" / "day12_evaluation_cases.json",
+                        on_progress=show_progress,
+                    )
+                st.session_state["evaluation_results"] = results
+            except (OSError, ValueError, OpenAIError) as error:
+                st.error(f"Could not start evaluation: {type(error).__name__}. Check the prompt and test-case files and API configuration.")
+            finally:
+                progress.empty()
 
-classification_fields = [
-    "feedback_type", "product_theme", "severity", "summary", "confidence",
-]
-output_columns = classification_fields + ["classification_status", "classification_error"]
-uploaded_bytes = uploaded_file.getvalue() if uploaded_file is not None else None
-upload_key = hashlib.sha256(uploaded_bytes).hexdigest() if uploaded_bytes is not None else None
-if st.session_state.get("classification_upload_key") != upload_key:
-    st.session_state.pop("classification_results", None)
-    st.session_state["classification_upload_key"] = upload_key
+    results = st.session_state.get("evaluation_results", [])
+    if results:
+        summary = field_accuracy(results)
+        for column, (field, counts) in zip(st.columns(3), summary.items()):
+            passed, scored = counts["passed"], counts["scored"]
+            label = f"{passed}/{scored} ({passed / scored:.0%})" if scored else "Not scored"
+            column.metric(f"{field.replace('_', ' ').capitalize()} accuracy", label)
+    with st.expander("Evaluation details"):
+        st.caption(f"Current classifier: {active_prompt_version}.")
+        st.caption("One API call per example; expected answers stay local.")
+        if results:
+            st.caption(
+                f"Displayed run: {results[0]['prompt_file']} | "
+                f"Model: {results[0]['model']} | UTC: {results[0]['run_time']}"
+            )
+            st.caption(
+                "Null expectations are not scored. Failed requests count as non-matches for scored fields. "
+                "Partial means all scored fields match, but at least one field is not scored."
+            )
+            results_df = pd.DataFrame(results)
+            display_df = results_df.drop(columns=["prompt_file", "model", "run_time"]).copy()
+            for field in summary:
+                display_df[f"expected_{field}"] = display_df[f"expected_{field}"].fillna("Not scored")
+            st.dataframe(display_df)
+            st.download_button(
+                "Download evaluation results (CSV)",
+                data=results_df.to_csv(index=False),
+                file_name=f"evaluation_{Path(results[0]['prompt_file']).stem}_results.csv",
+                mime="text/csv",
+            )
 
-if uploaded_file is not None:
-    try:
-        # Keep original CSV values, including leading zeros and literal "NA" IDs.
-        df = pd.read_csv(BytesIO(uploaded_bytes), dtype=str, keep_default_na=False)
-    except pd.errors.EmptyDataError:
-        st.error(
-            "The uploaded CSV has no data or headers. "
-            "Please add the required column headers and at least one feedback record."
+with feedback_container:
+    st.subheader("Upload feedback")
+    st.caption("CSV · Maximum 20 records")
+    uploaded_file = st.file_uploader("Upload customer feedback", type=["csv"])
+    st.caption("Use sample or approved customer data.")
+    with st.expander("CSV requirements and guidance"):
+        st.markdown(
+            "Upload a UTF-8 CSV with 1–20 records and these columns: "
+            "`feedback_id`, `date`, `feedback_text`, `customer_type`, `source`, and `product_area`. "
+            "Feedback IDs must be unique and feedback text must not be blank."
         )
-        st.stop()
-    except (pd.errors.ParserError, UnicodeDecodeError):
-        st.error("Could not read the CSV. Please upload a valid UTF-8 CSV file.")
-        st.stop()
-    required_columns = [
-        "feedback_id",
-        "date",
-        "feedback_text",
-        "customer_type",
-        "source",
-        "product_area",
+        st.caption(
+            "Do not upload confidential or personally identifiable customer information "
+            "unless this application is approved for that data."
+        )
+
+    classification_fields = [
+        "feedback_type", "product_theme", "severity", "summary", "confidence",
     ]
-    missing_columns = [column for column in required_columns if column not in df.columns]
-    conflicting_columns = [column for column in output_columns if column in df.columns]
+    output_columns = classification_fields + ["classification_status", "classification_error"]
+    uploaded_bytes = uploaded_file.getvalue() if uploaded_file is not None else None
+    upload_key = hashlib.sha256(uploaded_bytes).hexdigest() if uploaded_bytes is not None else None
+    if st.session_state.get("classification_upload_key") != upload_key:
+        st.session_state.pop("classification_results", None)
+        st.session_state["classification_upload_key"] = upload_key
 
-    if missing_columns:
-        st.error(f"Missing required columns: {', '.join(missing_columns)}")
-    elif df.empty:
-        st.error("The uploaded CSV is empty. Please add at least one feedback record.")
-    elif len(df) > 20:
-        st.error(f"The CSV contains {len(df)} records. Please upload at most 20 records.")
-    elif conflicting_columns:
-        st.error(
-            "CSV columns conflict with classification output columns. "
-            f"Please rename these columns: {', '.join(conflicting_columns)}"
-        )
-    else:
-        blank_feedback = df["feedback_text"].fillna("").astype(str).str.strip().eq("")
-        if blank_feedback.any():
-            affected_ids = df.loc[blank_feedback, "feedback_id"].astype(str)
+    if uploaded_file is not None:
+        try:
+            # Keep original CSV values, including leading zeros and literal "NA" IDs.
+            df = pd.read_csv(BytesIO(uploaded_bytes), dtype=str, keep_default_na=False)
+        except pd.errors.EmptyDataError:
             st.error(
-                "feedback_text cannot be blank. "
-                f"Affected feedback_id values: {', '.join(affected_ids)}"
+                "The uploaded CSV has no data or headers. "
+                "Please add the required column headers and at least one feedback record."
+            )
+            st.stop()
+        except (pd.errors.ParserError, UnicodeDecodeError):
+            st.error("Could not read the CSV. Please upload a valid UTF-8 CSV file.")
+            st.stop()
+        required_columns = [
+            "feedback_id",
+            "date",
+            "feedback_text",
+            "customer_type",
+            "source",
+            "product_area",
+        ]
+        missing_columns = [column for column in required_columns if column not in df.columns]
+        conflicting_columns = [column for column in output_columns if column in df.columns]
+
+        if missing_columns:
+            st.error(f"Missing required columns: {', '.join(missing_columns)}")
+        elif df.empty:
+            st.error("The uploaded CSV is empty. Please add at least one feedback record.")
+        elif len(df) > 20:
+            st.error(f"The CSV contains {len(df)} records. Please upload at most 20 records.")
+        elif conflicting_columns:
+            st.error(
+                "CSV columns conflict with classification output columns. "
+                f"Please rename these columns: {', '.join(conflicting_columns)}"
             )
         else:
-            duplicate_feedback = df["feedback_id"].duplicated(keep=False)
-            if duplicate_feedback.any():
-                duplicated_ids = df.loc[
-                    duplicate_feedback, "feedback_id"
-                ].drop_duplicates().astype(str)
+            blank_feedback = df["feedback_text"].fillna("").astype(str).str.strip().eq("")
+            if blank_feedback.any():
+                affected_ids = df.loc[blank_feedback, "feedback_id"].astype(str)
                 st.error(
-                    "feedback_id values must be unique. "
-                    f"Duplicated ID values: {', '.join(duplicated_ids)}"
+                    "feedback_text cannot be blank. "
+                    f"Affected feedback_id values: {', '.join(affected_ids)}"
                 )
             else:
-                st.success(f"Upload successful: **{len(df)}** feedback records uploaded.")
-                st.dataframe(df)
-                if st.button("Classify feedback", disabled=not prompt_available):
-                    st.session_state.pop("classification_results", None)
-                    if not os.getenv("OPENAI_API_KEY", "").strip():
-                        st.warning("Add OPENAI_API_KEY to your local .env file before classifying.")
-                    else:
-                        progress = st.progress(0, text="Starting classification...")
-                        try:
-                            prompt = active_prompt_path.read_text(encoding="utf-8")
-                            classified_rows = []
-                            with OpenAI(max_retries=0, timeout=30.0) as client:
-                                for completed, original_row in enumerate(df.to_dict("records"), start=1):
-                                    row = dict(original_row)
-                                    row.update({field: None for field in classification_fields})
-                                    row.update(classification_status="Success", classification_error="")
-                                    try:
-                                        row.update(classify_feedback(client, prompt, original_row["feedback_text"]))
-                                    except OpenAIError as error:
-                                        row.update(
-                                            classification_status="Error",
-                                            classification_error=f"OpenAI request failed ({type(error).__name__}).",
-                                        )
-                                    except ValueError:
-                                        row.update(
-                                            classification_status="Error",
-                                            classification_error="The model returned an invalid or incomplete classification.",
-                                        )
-                                    classified_rows.append(row)
-                                    progress.progress(
-                                        completed / len(df),
-                                        text=f"Processed {completed} of {len(df)} feedback records",
-                                    )
-                            st.session_state["classification_results"] = pd.DataFrame(
-                                classified_rows, columns=[*df.columns, *output_columns]
-                            )
-                        except (OSError, ValueError, OpenAIError) as error:
-                            st.error(
-                                f"Could not complete classification: {type(error).__name__}. "
-                                f"Check the {active_prompt_version} prompt file and API configuration."
-                            )
-                        finally:
-                            progress.empty()
-
-                classification_results = st.session_state.get("classification_results")
-                if classification_results is not None:
-                    failed = int((classification_results["classification_status"] == "Error").sum())
-                    st.info(
-                        f"Classification complete: **{len(classification_results) - failed}** records successfully processed; "
-                        f"**{failed}** records failed."
+                duplicate_feedback = df["feedback_id"].duplicated(keep=False)
+                if duplicate_feedback.any():
+                    duplicated_ids = df.loc[
+                        duplicate_feedback, "feedback_id"
+                    ].drop_duplicates().astype(str)
+                    st.error(
+                        "feedback_id values must be unique. "
+                        f"Duplicated ID values: {', '.join(duplicated_ids)}"
                     )
-                    if failed > 0:
-                        st.warning(
-                            "Some records could not be classified. "
-                            "Review the `classification_error` column for details."
+                else:
+                    st.success(f"{len(df)} records ready")
+                    with st.expander("Preview uploaded feedback"):
+                        st.dataframe(df)
+                    if st.button("Classify feedback", disabled=not prompt_available, type="primary"):
+                        st.session_state.pop("classification_results", None)
+                        if not os.getenv("OPENAI_API_KEY", "").strip():
+                            st.error("AI service is not configured. Contact the app owner.")
+                        else:
+                            progress = st.progress(0, text="Starting classification...")
+                            try:
+                                prompt = active_prompt_path.read_text(encoding="utf-8")
+                                classified_rows = []
+                                with OpenAI(max_retries=0, timeout=30.0) as client:
+                                    for completed, original_row in enumerate(df.to_dict("records"), start=1):
+                                        row = dict(original_row)
+                                        row.update({field: None for field in classification_fields})
+                                        row.update(classification_status="Success", classification_error="")
+                                        try:
+                                            row.update(classify_feedback(client, prompt, original_row["feedback_text"]))
+                                        except OpenAIError as error:
+                                            row.update(
+                                                classification_status="Error",
+                                                classification_error=f"OpenAI request failed ({type(error).__name__}).",
+                                            )
+                                        except ValueError:
+                                            row.update(
+                                                classification_status="Error",
+                                                classification_error="The model returned an invalid or incomplete classification.",
+                                            )
+                                        classified_rows.append(row)
+                                        progress.progress(
+                                            completed / len(df),
+                                            text=f"Processed {completed} of {len(df)} feedback records",
+                                        )
+                                st.session_state["classification_results"] = pd.DataFrame(
+                                    classified_rows, columns=[*df.columns, *output_columns]
+                                )
+                            except (OSError, ValueError, OpenAIError) as error:
+                                st.error(
+                                    f"Could not complete classification: {type(error).__name__}. "
+                                    f"Check the {active_prompt_version} prompt file and API configuration."
+                                )
+                            finally:
+                                progress.empty()
+
+                    classification_results = st.session_state.get("classification_results")
+                    if classification_results is not None:
+                        failed = int((classification_results["classification_status"] == "Error").sum())
+                        st.subheader("Results")
+                        st.info(
+                            f"{len(classification_results) - failed} classified · {failed} failed"
                         )
-                    st.dataframe(classification_results)
-                    st.download_button(
-                        "Download results",
-                        data=classification_results.to_csv(index=False),
-                        file_name="analysed_feedback_results.csv",
-                        mime="text/csv",
-                    )
+                        if failed > 0:
+                            st.warning(
+                                "Some records could not be classified. "
+                                "Review the `classification_error` column for details."
+                            )
+                        st.dataframe(classification_results)
+                        st.subheader("Insights")
 
-                    feedback_type_counts = (
-                        classification_results.loc[
-                            classification_results["classification_status"] == "Success",
-                            "feedback_type",
-                        ]
-                        .value_counts()
-                        .rename_axis("feedback_type")
-                        .reset_index(name="count")
-                    )
-                    st.caption("Classified feedback counts by feedback type")
-                    st.dataframe(feedback_type_counts, hide_index=True)
-                    st.bar_chart(feedback_type_counts, x="feedback_type", y="count")
+                        feedback_type_counts = (
+                            classification_results.loc[
+                                classification_results["classification_status"] == "Success",
+                                "feedback_type",
+                            ]
+                            .value_counts()
+                            .rename_axis("feedback_type")
+                            .reset_index(name="count")
+                        )
 
-                    product_theme_counts = (
-                        classification_results.loc[
-                            classification_results["classification_status"] == "Success",
-                            "product_theme",
-                        ]
-                        .value_counts()
-                        .rename_axis("product_theme")
-                        .reset_index(name="count")
-                    )
-                    st.caption("Classified feedback counts by product theme")
-                    st.dataframe(product_theme_counts, hide_index=True)
-                    st.bar_chart(product_theme_counts, x="product_theme", y="count")
+                        product_theme_counts = (
+                            classification_results.loc[
+                                classification_results["classification_status"] == "Success",
+                                "product_theme",
+                            ]
+                            .value_counts()
+                            .rename_axis("product_theme")
+                            .reset_index(name="count")
+                        )
+                        type_chart, theme_chart = st.columns(2)
+                        with type_chart:
+                            st.caption("Feedback type")
+                            st.bar_chart(feedback_type_counts, x="feedback_type", y="count")
+                        with theme_chart:
+                            st.caption("Product theme")
+                            st.bar_chart(product_theme_counts, x="product_theme", y="count")
+                        with st.expander("View chart counts"):
+                            st.caption("Feedback type")
+                            st.dataframe(feedback_type_counts, hide_index=True)
+                            st.caption("Product theme")
+                            st.dataframe(product_theme_counts, hide_index=True)
+
+                        st.subheader("Download")
+                        st.download_button(
+                            "Download results",
+                            data=classification_results.to_csv(index=False),
+                            file_name="analysed_feedback_results.csv",
+                            mime="text/csv",
+                        )
